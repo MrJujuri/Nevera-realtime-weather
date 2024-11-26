@@ -1,4 +1,4 @@
-local debug = true -- Set to true to enable notifications, false to disable
+local debug = false -- Set to true to enable notifications, false to disable
 local weatherTranslation = {
     ["Clear"] = "Clear",
     ["Clouds"] = "Cloudy",
