@@ -1,4 +1,3 @@
-local debug = false -- Set to true to enable notifications, false to disable
 local weatherTranslation = {
     ["Clear"] = "Clear",
     ["Clouds"] = "Cloudy",
@@ -10,8 +9,6 @@ local weatherTranslation = {
     ["OVERCAST"] = "Overcast"
 }
 
-local disableFog = true
-
 local currentHour = 0
 local currentMinute = 0
 local currentWeather = "N/A"
@@ -19,7 +16,7 @@ local currentWindSpeed = "0.0"
 local displayTime = false
 
 function displayNotificationTopLeft()
-    if debug and displayTime then
+    if Config.debug and displayTime then
         local text = string.format("Time: %02d:%02d\nWeather: %s\nWind: Speed %s m/s", currentHour, currentMinute, currentWeather, currentWindSpeed)
         
         SetTextFont(4)
@@ -43,7 +40,7 @@ end)
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(60000)
+        Citizen.Wait(Config.updateInterval)
         currentMinute = currentMinute + 1
 
         if currentMinute >= 60 then
@@ -66,11 +63,8 @@ AddEventHandler("realtime:sendWeather", function(data)
     end
 
     local timestamp = data.dt
-
     local timezoneOffset = 3600 
-
     local localTimestamp = timestamp + timezoneOffset
-
     local totalSeconds = localTimestamp % 86400 
     currentHour = math.floor(totalSeconds / 3600) 
     currentMinute = math.floor((totalSeconds % 3600) / 60) 
@@ -92,7 +86,7 @@ AddEventHandler("realtime:sendWeather", function(data)
     elseif currentWeather == "Thunderstorm" then
         SetWeatherTypeNowPersist("THUNDER")
         SetOverrideWeather("THUNDER")
-    elseif currentWeather == "Fog" and not disableFog then
+    elseif currentWeather == "Fog" and not Config.disableFog then
         SetWeatherTypeNowPersist("FOGGY")
         SetOverrideWeather("FOGGY")
     else
@@ -120,6 +114,6 @@ end)
 Citizen.CreateThread(function()
     while true do
         TriggerServerEvent("realtime:getWeather")
-        Citizen.Wait(600000)
+        Citizen.Wait(Config.weatherChangeInterval)
     end
 end)
