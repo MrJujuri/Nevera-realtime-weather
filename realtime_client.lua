@@ -1,30 +1,26 @@
--- Tablica za prevođenje vremenskih uvjeta
-local prijevodVremena = {
-    ["Clear"] = "Vedro",
-    ["Clouds"] = "Oblacno",
-    ["Rain"] = "Kiša",
-    ["Thunderstorm"] = "Grmljavina",
-    ["Snow"] = "Snijeg",
-    ["Fog"] = "Magla",
-    ["Mist"] = "Magla",
-    ["OVERCAST"] = "Oblačno"
+local debug = true -- Set to true to enable notifications, false to disable
+local weatherTranslation = {
+    ["Clear"] = "Clear",
+    ["Clouds"] = "Cloudy",
+    ["Rain"] = "Rain",
+    ["Thunderstorm"] = "Thunderstorm",
+    ["Snow"] = "Snow",
+    ["Fog"] = "Fog",
+    ["Mist"] = "Fog",
+    ["OVERCAST"] = "Overcast"
 }
 
-
-local disableFog = true 
-
+local disableFog = true
 
 local currentHour = 0
 local currentMinute = 0
 local currentWeather = "N/A"
 local currentWindSpeed = "0.0"
-local prikaziVrijeme = false 
+local displayTime = false
 
-
-function prikaziObavijestGoreLijevo()
-    if prikaziVrijeme then
-
-        local tekst = string.format("Sati: %02d:%02d\nVrijeme: %s\nVjetar: Brzina %s m/s", currentHour, currentMinute, currentWeather, currentWindSpeed)
+function displayNotificationTopLeft()
+    if debug and displayTime then
+        local text = string.format("Time: %02d:%02d\nWeather: %s\nWind: Speed %s m/s", currentHour, currentMinute, currentWeather, currentWindSpeed)
         
         SetTextFont(4)
         SetTextProportional(1)
@@ -32,17 +28,16 @@ function prikaziObavijestGoreLijevo()
         SetTextColour(255, 255, 255, 200)
         SetTextOutline() 
         SetTextEntry("STRING")
-        AddTextComponentString(tekst)
+        AddTextComponentString(text)
         
         DrawText(0.015, 0.015) 
     end
 end
 
-
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0) 
-        prikaziObavijestGoreLijevo()
+        displayNotificationTopLeft()
     end
 end)
 
@@ -81,24 +76,23 @@ AddEventHandler("realtime:sendWeather", function(data)
     currentMinute = math.floor((totalSeconds % 3600) / 60) 
 
     local engWeather = data.weather and data.weather[1] and data.weather[1].main or "N/A"
-    currentWeather = prijevodVremena[engWeather] or engWeather
+    currentWeather = weatherTranslation[engWeather] or engWeather
 
     local windSpeed = data.wind and data.wind.speed or 0.0
     currentWindSpeed = string.format("%.2f", windSpeed)
 
-
     NetworkOverrideClockTime(currentHour, currentMinute, 0)
 
-    if currentWeather == "Snijeg" then
+    if currentWeather == "Snow" then
         SetWeatherTypeNowPersist("XMAS")
         SetOverrideWeather("XMAS")
-    elseif currentWeather == "Kiša" then
+    elseif currentWeather == "Rain" then
         SetWeatherTypeNowPersist("RAIN")
         SetOverrideWeather("RAIN")
-    elseif currentWeather == "Grmljavina" then
+    elseif currentWeather == "Thunderstorm" then
         SetWeatherTypeNowPersist("THUNDER")
         SetOverrideWeather("THUNDER")
-    elseif currentWeather == "Magla" and not disableFog then
+    elseif currentWeather == "Fog" and not disableFog then
         SetWeatherTypeNowPersist("FOGGY")
         SetOverrideWeather("FOGGY")
     else
@@ -117,9 +111,9 @@ AddEventHandler("realtime:sendWeather", function(data)
         SetWindSpeed(windSpeed)
     end
 
-    prikaziVrijeme = true
+    displayTime = true
     Citizen.SetTimeout(15000, function()
-        prikaziVrijeme = false
+        displayTime = false
     end)
 end)
 
